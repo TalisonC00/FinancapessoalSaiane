@@ -8,54 +8,25 @@
     <link rel="apple-touch-icon" href="logo.jpg">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#e84393">
+    <link rel="manifest" href="manifest.json?v=2"> <meta name="theme-color" content="#e84393">
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <style>
-        :root {
-            --primary-pink: #d63384;
-            --bg: #fff9fb;
-            --in: #2ecc71;
-            --out: #e74c3c;
-        }
-        body { 
-            background-color: var(--bg); 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-            -webkit-tap-highlight-color: transparent;
-        }
-        
-        .premium-header {
-            background: linear-gradient(135deg, #fd79a8, #e84393);
-            color: white; padding: 50px 20px 60px 20px; border-radius: 0 0 35px 35px;
-            box-shadow: 0 4px 15px rgba(232, 67, 147, 0.2);
-        }
-
-        .header-labels {
-            background: rgba(255, 255, 255, 0.2);
-            padding: 10px 15px; border-radius: 18px;
-            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.3);
-        }
-
+        :root { --primary-pink: #d63384; --bg: #fff9fb; --in: #2ecc71; --out: #e74c3c; }
+        body { background-color: var(--bg); font-family: -apple-system, BlinkMacSystemFont, sans-serif; -webkit-tap-highlight-color: transparent; }
+        .premium-header { background: linear-gradient(135deg, #fd79a8, #e84393); color: white; padding: 50px 20px 60px 20px; border-radius: 0 0 35px 35px; box-shadow: 0 4px 15px rgba(232, 67, 147, 0.2); }
+        .header-labels { background: rgba(255, 255, 255, 0.2); padding: 10px 15px; border-radius: 18px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.3); }
         .card-premium { background: white; border: none; border-radius: 22px; box-shadow: 0 5px 20px rgba(0,0,0,0.03); margin-bottom: 15px; }
-        
         .nav-pills { background: white !important; border-radius: 50px !important; padding: 5px !important; border: 1px solid #eee; }
         .nav-link { color: var(--primary-pink); border-radius: 50px !important; font-weight: 500; padding: 10px 20px !important; border: none !important; }
         .nav-link.active { background-color: var(--primary-pink) !important; color: white !important; box-shadow: 0 4px 10px rgba(214, 51, 132, 0.2); }
-        
         .btn-confirmar { background-color: var(--primary-pink); border: none; border-radius: 50px !important; padding: 15px; font-weight: bold; color: white; width: 100%; opacity: 1 !important; box-shadow: 0 4px 12px rgba(214, 51, 132, 0.2); }
-
-        /* Estilo dos Botões do Cofre (Vazados por padrão) */
         .btn-cofre { border-radius: 50px !important; padding: 12px; font-weight: bold; width: 100%; transition: 0.3s; background: transparent; }
         .btn-poup { border: 2px solid var(--primary-pink); color: var(--primary-pink); }
         .btn-resg { border: 2px solid var(--out); color: var(--out); }
-        
-        /* Quando "Acesos" (Sólidos) */
         .btn-poup.active { background: var(--primary-pink) !important; color: white !important; }
         .btn-resg.active { background: var(--out) !important; color: white !important; }
-
         .comentario-box { font-size: 0.85rem; color: #555; margin-top: 8px; padding-top: 5px; border-top: 1px dashed #fce4ec; font-weight: 500; }
         #toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); color: #fff; padding: 10px 20px; border-radius: 50px; z-index: 9999; display: none; }
         #modalConfirm { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 10000; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
@@ -109,9 +80,7 @@
                     <button onclick="adicionarRegistro()" class="btn-confirmar shadow-sm">Confirmar ✨</button>
                 </div>
             </div>
-
             <div class="tab-pane fade" id="aba-extrato"><div id="listaExtrato"></div></div>
-
             <div class="tab-pane fade" id="aba-poupanca">
                 <div class="card card-premium p-4 text-center">
                     <div class="mb-2"><i class="bi bi-gem display-4" style="color: #e84393;"></i></div>
@@ -130,15 +99,21 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        let dados = JSON.parse(localStorage.getItem('fin_saiane_final_v11')) || { transacoes: [], cofre: 0, histCofre: [] };
+        // REFORÇO DE SERVICE WORKER PARA ATUALIZAÇÃO NO IPHONE
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js?v=2').then(function(reg) {
+                reg.update(); // Força busca de nova versão
+            });
+        }
+
+        let dados = JSON.parse(localStorage.getItem('fin_v_final_ios_v3')) || { transacoes: [], cofre: 0, histCofre: [] };
+
         const meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
         const selMes = document.getElementById('mes');
         meses.forEach((m, i) => { const opt = document.createElement('option'); opt.value = m; opt.text = m; if(i === new Date().getMonth()) opt.selected = true; selMes.add(opt); });
 
         function showToast(m) { const t = document.getElementById('toast'); t.innerText = m; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 2000); }
-
         function ajustarCampos() { document.getElementById('contComent').style.display = (document.querySelector('input[name="tipo"]:checked').value === "Saída") ? "block" : "none"; }
-
         function validarBotoesCofre() {
             const v = document.getElementById('valorPoupanca').value;
             if(v > 0) { document.getElementById('btnP').classList.add('active'); document.getElementById('btnR').classList.add('active'); }
@@ -170,7 +145,7 @@
             salvar(); fecharModal(); showToast("Removido! 🗑️");
         };
 
-        function salvar() { localStorage.setItem('fin_v_final_v11', JSON.stringify(dados)); renderizar(); }
+        function salvar() { localStorage.setItem('fin_v_final_ios_v3', JSON.stringify(dados)); renderizar(); }
 
         function renderizar() {
             const lista = document.getElementById('listaExtrato'); lista.innerHTML = "";
@@ -183,7 +158,7 @@
             const listH = document.getElementById('listaHistCofre'); listH.innerHTML = "";
             dados.histCofre.forEach(x => {
                 const isAdd = x.t === 'add';
-                listH.innerHTML += `<div class="card card-premium p-3 mb-2 border-start border-3 ${isAdd ? 'border-success' : 'border-danger'}"><div class="d-flex justify-content-between align-items-center"><span><i class="bi bi-trash3 me-2 opacity-50" onclick="abrirModal(${x.id}, 'h')"></i><small>${x.data}</small></span><span class="${isAdd ? 'text-success' : 'text-danger'} fw-bold">${isAdd ? '+' : '-'} R$ ${x.v.toFixed(2)}</span></div>${x.coment ? `<div class="comentario-box">🌸 ${x.coment}</div>` : ''}</div>`;
+                listH.innerHTML += `<div class="card card-premium p-3 mb-2 border-start border-3 ${isAdd ? 'border-success' : 'border-danger'}"><div class="d-flex justify-content-between align-items-center"><span><i class="bi bi-trash3 me-2 opacity-50" onclick="abrirModal(${x.id}, 'h')"></i><small>${x.data}</small></span><span class="${isAdd ? 'text-success' : 'text-danger'} fw-bold">${isAdd ? '+' : '-'}- R$ ${x.v.toFixed(2)}</span></div>${x.coment ? `<div class="comentario-box">🌸 ${x.coment}</div>` : ''}</div>`;
             });
 
             document.getElementById('resumoEntradas').innerText = "R$ " + entM.toFixed(2);
