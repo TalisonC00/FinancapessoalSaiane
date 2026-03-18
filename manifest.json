@@ -1,0 +1,17 @@
+{
+  "name": "Finanças Saiane",
+  "short_name": "Finanças",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#fff9fb",
+  "theme_color": "#e84393",
+  "icons": [
+    {
+      "src": "logo.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ]
+}
+
