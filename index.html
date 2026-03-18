@@ -9,7 +9,6 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="Finanças">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#e84393">
 
@@ -19,6 +18,8 @@
         :root {
             --primary-pink: #d63384;
             --bg: #fff9fb;
+            --in: #2ecc71;
+            --out: #ff4d4d;
         }
         body { 
             background-color: var(--bg); 
@@ -26,7 +27,6 @@
             -webkit-tap-highlight-color: transparent;
         }
         
-        /* Cabeçalho Premium Rosa */
         .premium-header {
             background: linear-gradient(135deg, #fd79a8, #e84393);
             color: white; padding: 50px 20px 60px 20px; border-radius: 0 0 35px 35px;
@@ -42,12 +42,48 @@
 
         .card-premium { background: white; border: none; border-radius: 22px; box-shadow: 0 5px 20px rgba(0,0,0,0.03); margin-bottom: 15px; }
         .nav-pills { background: #fce4ec; border-radius: 50px; padding: 4px; }
-        .nav-link.active { background-color: var(--primary-pink) !important; border-radius: 50px; color: white !important; }
-        .btn-confirmar { background-color: var(--primary-pink); border: none; border-radius: 50px; padding: 15px; font-weight: bold; color: white; width: 100%; }
-        .btn-delete { color: #f48fb1; }
+        .nav-link { color: var(--primary-pink); border-radius: 50px; font-weight: 500; }
+        .nav-link.active { background-color: var(--primary-pink) !important; color: white !important; }
+        
+        /* Botões Inteligentes */
+        .btn-confirmar { border: none; border-radius: 50px; padding: 15px; font-weight: bold; color: white; width: 100%; transition: 0.3s; opacity: 0.5; }
+        .btn-active { opacity: 1 !important; cursor: pointer; }
+        .btn-rosa { background-color: var(--primary-pink); }
+        .btn-vermelho { background-color: var(--out); }
+
+        .btn-delete { color: #f48fb1; cursor: pointer; }
+
+        /* Estilo dos Comentários no Histórico */
+        .comentario-box { 
+            font-size: 0.85rem; 
+            color: #555; 
+            margin-top: 8px; 
+            padding-top: 5px; 
+            border-top: 1px dashed #fce4ec; 
+            font-weight: 500;
+        }
+
+        /* Toast e Modal Personalizado (Adeus alertas cinzas) */
+        #toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); color: #fff; padding: 10px 20px; border-radius: 50px; z-index: 9999; display: none; font-size: 0.9rem; }
+        #modalConfirm { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 10000; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
+        .modal-box { background: white; padding: 25px; border-radius: 25px; text-align: center; width: 85%; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        
+        .hist-cofre-item { font-size: 0.8rem; border-bottom: 1px solid #fdf2f6; padding: 8px 0; }
     </style>
 </head>
 <body class="pb-5">
+
+    <div id="toast"></div>
+
+    <div id="modalConfirm">
+        <div class="modal-box">
+            <h5 class="mb-4">Deseja apagar esse registro? 🌸</h5>
+            <div class="d-flex gap-2">
+                <button onclick="fecharModal()" class="btn btn-light w-100 rounded-pill">Cancelar</button>
+                <button id="btnConfirmarDelete" class="btn btn-danger w-100 rounded-pill">Apagar</button>
+            </div>
+        </div>
+    </div>
 
     <div class="premium-header text-center">
         <small class="text-uppercase" style="letter-spacing: 1.5px; opacity: 0.9; font-weight: 600;">Saldo em Conta</small>
@@ -67,7 +103,7 @@
 
     <div class="container mt-n3" style="margin-top: -30px; position: relative; z-index: 10;">
         <ul class="nav nav-pills nav-fill mb-4 shadow-sm bg-white" id="pills-tab" role="tablist">
-            <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#aba-novo">✨ Novo</button></li>
+            <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#aba-novo" onclick="ajustarBotaoPrincipal()">✨ Novo</button></li>
             <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#aba-extrato">📃 Extrato</button></li>
             <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#aba-poupanca">💰 Cofre</button></li>
         </ul>
@@ -82,14 +118,19 @@
                         <option>Outubro</option><option>Novembro</option><option>Dezembro</option>
                     </select>
                     <div class="btn-group w-100 mb-3">
-                        <input type="radio" class="btn-check" name="tipo" id="tipoEntrada" value="Entrada" checked>
+                        <input type="radio" class="btn-check" name="tipo" id="tipoEntrada" value="Entrada" checked onchange="ajustarBotaoPrincipal()">
                         <label class="btn btn-outline-success" for="tipoEntrada">Ganhei</label>
-                        <input type="radio" class="btn-check" name="tipo" id="tipoSaida" value="Saída">
+                        <input type="radio" class="btn-check" name="tipo" id="tipoSaida" value="Saída" onchange="ajustarBotaoPrincipal()">
                         <label class="btn btn-outline-danger" for="tipoSaida">Gastei</label>
                     </div>
                     <input type="text" id="desc" class="form-control mb-2 border-0 bg-light" placeholder="O que foi?">
-                    <input type="number" id="valor" class="form-control mb-4 border-0 bg-light" placeholder="Valor R$">
-                    <button onclick="adicionarRegistro()" class="btn-confirmar shadow-sm">Confirmar ✨</button>
+                    <input type="number" id="valor" class="form-control mb-2 border-0 bg-light" placeholder="Valor R$" oninput="ajustarBotaoPrincipal()">
+                    
+                    <div id="contComent" style="display:none;">
+                        <input type="text" id="comentario" class="form-control mb-3 border-0 bg-light" placeholder="🌸 Adicionar comentário...">
+                    </div>
+
+                    <button id="btnLancar" onclick="adicionarRegistro()" class="btn-confirmar btn-rosa shadow-sm">Confirmar ✨</button>
                 </div>
             </div>
 
@@ -102,11 +143,13 @@
                     <div class="mb-2"><i class="bi bi-gem display-4" style="color: #e84393;"></i></div>
                     <h6 class="text-muted">Meu Cofre</h6>
                     <h2 class="fw-bold mb-4" id="totalCofre" style="color: #ad1457;">R$ 0,00</h2>
-                    <input type="number" id="valorPoupanca" class="form-control mb-3 border-0 bg-light text-center" placeholder="Valor R$">
-                    <div class="d-flex gap-2">
-                        <button onclick="gerirPoupanca('add')" class="btn btn-confirmar py-2">Poupar</button>
-                        <button onclick="gerirPoupanca('sub')" class="btn btn-outline-danger w-100 py-2 rounded-pill">Resgatar</button>
+                    <input type="number" id="valorPoupanca" class="form-control mb-3 border-0 bg-light text-center" placeholder="Valor R$" oninput="validarBotoesCofre()">
+                    <div class="d-flex gap-2 mb-4">
+                        <button id="btnPoupar" onclick="gerirPoupanca('add')" class="btn-confirmar btn-rosa py-2">Poupar</button>
+                        <button id="btnResgatar" onclick="gerirPoupanca('sub')" class="btn btn-outline-danger w-100 py-2 rounded-pill">Resgatar</button>
                     </div>
+                    <h6 class="text-start text-muted small text-uppercase mb-2" style="letter-spacing: 1px;">Histórico do Cofre</h6>
+                    <div id="listaHistCofre" class="text-start"></div>
                 </div>
             </div>
         </div>
@@ -114,37 +157,80 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        let dados = JSON.parse(localStorage.getItem('financas_ios_final')) || { transacoes: [], cofre: 0 };
+        if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
+
+        let dados = JSON.parse(localStorage.getItem('fin_saiane_premium_v2')) || { transacoes: [], cofre: 0, histCofre: [] };
+        
+        const meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+        const selMes = document.getElementById('mes');
+        selMes.value = meses[new Date().getMonth()];
+
         function formatar(v) { return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
 
-        function adicionarRegistro() {
-            const mes = document.getElementById('mes').value;
-            const desc = document.getElementById('desc').value;
-            const valor = parseFloat(document.getElementById('valor').value) || 0;
-            const tipo = document.querySelector('input[name="tipo"]:checked').value;
-            if (!desc || valor <= 0) return alert("Preencha os campos!");
-            dados.transacoes.push({ id: Date.now(), mes, desc, valor, tipo });
-            salvar();
-            document.getElementById('desc').value = ""; document.getElementById('valor').value = "";
+        function showToast(m) {
+            const t = document.getElementById('toast');
+            t.innerText = m; t.style.display = 'block';
+            setTimeout(() => t.style.display = 'none', 2000);
         }
 
-        function removerRegistro(id) {
-            if(confirm("Apagar registro?")) {
-                dados.transacoes = dados.transacoes.filter(t => t.id !== id);
-                salvar();
-            }
+        function ajustarBotaoPrincipal() {
+            const btn = document.getElementById('btnLancar');
+            const val = document.getElementById('valor').value;
+            const tipo = document.querySelector('input[name="tipo"]:checked').value;
+            document.getElementById('contComent').style.display = (tipo === "Saída") ? "block" : "none";
+            
+            btn.className = (tipo === "Saída") ? "btn-confirmar btn-vermelho" : "btn-confirmar btn-rosa";
+            if(val > 0) btn.classList.add('btn-active');
+            btn.innerText = (tipo === "Saída") ? "Confirmar Gasto ✨" : "Confirmar Ganho ✨";
+        }
+
+        function validarBotoesCofre() {
+            const val = document.getElementById('valorPoupanca').value;
+            const bp = document.getElementById('btnPoupar');
+            if(val > 0) bp.classList.add('btn-active'); else bp.classList.remove('btn-active');
+        }
+
+        function adicionarRegistro() {
+            const mes = document.getElementById('mes').value, desc = document.getElementById('desc').value, val = parseFloat(document.getElementById('valor').value) || 0;
+            const tipo = document.querySelector('input[name="tipo"]:checked').value;
+            const coment = document.getElementById('comentario').value;
+
+            if (!desc || val <= 0) return showToast("Preencha os campos! 🌸");
+            
+            dados.transacoes.push({ id: Date.now(), mes, desc, valor: val, tipo, coment: tipo === "Saída" ? coment : "" });
+            salvar();
+            document.getElementById('desc').value = ""; document.getElementById('valor').value = ""; document.getElementById('comentario').value = "";
+            ajustarBotaoPrincipal();
+            showToast("Lançado com sucesso! ✨");
         }
 
         function gerirPoupanca(t) {
             const v = parseFloat(document.getElementById('valorPoupanca').value) || 0;
             if (v <= 0) return;
+            const agora = new Date();
+            const dataFmt = `${agora.getDate()}/${agora.getMonth()+1} ${agora.getHours()}:${agora.getMinutes()}`;
+            
             dados.cofre = (t === 'add') ? dados.cofre + v : dados.cofre - v;
+            dados.histCofre.unshift({ id: Date.now(), v, t, data: dataFmt });
+            
             document.getElementById('valorPoupanca').value = "";
+            validarBotoesCofre();
             salvar();
+            showToast("Cofre atualizado! 💎");
         }
 
+        let idApagar = null, tipoApagar = '';
+        function abrirModal(id, tipo) { idApagar = id; tipoApagar = tipo; document.getElementById('modalConfirm').style.display = 'flex'; }
+        function fecharModal() { document.getElementById('modalConfirm').style.display = 'none'; }
+        
+        document.getElementById('btnConfirmarDelete').onclick = function() {
+            if(tipoApagar === 't') dados.transacoes = dados.transacoes.filter(x => x.id !== idApagar);
+            else dados.histCofre = dados.histCofre.filter(x => x.id !== idApagar);
+            salvar(); fecharModal(); showToast("Removido! 🗑️");
+        };
+
         function salvar() {
-            localStorage.setItem('financas_ios_final', JSON.stringify(dados));
+            localStorage.setItem('fin_saiane_premium_v2', JSON.stringify(dados));
             renderizar();
         }
 
@@ -164,19 +250,33 @@
                     <div class="card card-premium p-3 mb-2 border-start border-4 ${isE ? 'border-success' : 'border-danger'}">
                         <div class="d-flex justify-content-between align-items-center">
                             <div class="d-flex align-items-center gap-3">
-                                <i class="bi bi-trash btn-delete fs-5" onclick="removerRegistro(${t.id})"></i>
+                                <i class="bi bi-trash btn-delete fs-5" onclick="abrirModal(${t.id}, 't')"></i>
                                 <div><small class="text-muted d-block" style="font-size:0.7rem">${t.tipo}</small><strong>${t.desc}</strong></div>
                             </div>
                             <div class="${isE ? 'text-success' : 'text-danger'} fw-bold">${isE ? '+' : '-'} ${formatar(t.valor)}</div>
                         </div>
+                        ${t.coment ? `<div class="comentario-box">🌸 ${t.coment}</div>` : ''}
                     </div>`;
             });
+
+            const listH = document.getElementById('listaHistCofre');
+            listH.innerHTML = "";
+            dados.histCofre.forEach(x => {
+                const isAdd = x.t === 'add';
+                listH.innerHTML += `
+                    <div class="hist-cofre-item d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-trash3 me-2 opacity-50" onclick="abrirModal(${x.id}, 'h')"></i> <small>${x.data}</small></span>
+                        <span class="${isAdd ? 'text-success' : 'text-danger'} fw-bold">${isAdd ? '+' : '-'}${formatar(x.v)}</span>
+                    </div>`;
+            });
+
             document.getElementById('resumoEntradas').innerText = formatar(entM);
             document.getElementById('resumoSaidas').innerText = formatar(saiM);
             document.getElementById('resumoSaldo').innerText = formatar(entM - saiM);
             document.getElementById('totalCofre').innerText = formatar(dados.cofre);
         }
         renderizar();
+        ajustarBotaoPrincipal();
     </script>
 </body>
 </html>
