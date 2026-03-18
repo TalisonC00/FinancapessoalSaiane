@@ -8,14 +8,14 @@
     <link rel="apple-touch-icon" href="logo.jpg">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="manifest" href="manifest.json?v=2"> <meta name="theme-color" content="#e84393">
+    <link rel="manifest" href="manifest.json?v=3"> <meta name="theme-color" content="#e84393">
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <style>
         :root { --primary-pink: #d63384; --bg: #fff9fb; --in: #2ecc71; --out: #e74c3c; }
         body { background-color: var(--bg); font-family: -apple-system, BlinkMacSystemFont, sans-serif; -webkit-tap-highlight-color: transparent; }
-        .premium-header { background: linear-gradient(135deg, #fd79a8, #e84393); color: white; padding: 50px 20px 60px 20px; border-radius: 0 0 35px 35px; box-shadow: 0 4px 15px rgba(232, 67, 147, 0.2); }
+        .premium-header { background: linear-gradient(135deg, #fd79a8, #e84393); color: white; padding: 40px 20px 60px 20px; border-radius: 0 0 35px 35px; box-shadow: 0 4px 15px rgba(232, 67, 147, 0.2); }
         .header-labels { background: rgba(255, 255, 255, 0.2); padding: 10px 15px; border-radius: 18px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.3); }
         .card-premium { background: white; border: none; border-radius: 22px; box-shadow: 0 5px 20px rgba(0,0,0,0.03); margin-bottom: 15px; }
         .nav-pills { background: white !important; border-radius: 50px !important; padding: 5px !important; border: 1px solid #eee; }
@@ -32,6 +32,9 @@
         #modalConfirm { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 10000; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
         .modal-box { background: white; padding: 25px; border-radius: 25px; text-align: center; width: 85%; }
         .hist-cofre-item { font-size: 0.8rem; border-bottom: 1px solid #fdf2f6; padding: 10px 0; }
+        
+        /* NOVO: Seletor de Mês Fixo no Topo */
+        .month-selector-top { max-width: 150px; margin: 0 auto; background: rgba(255, 255, 255, 0.15) !important; border: 1px solid rgba(255,255,255,0.3) !important; color: white !important; font-weight: bold; border-radius: 50px; text-align-last: center; }
     </style>
 </head>
 <body class="pb-5">
@@ -49,11 +52,20 @@
     </div>
 
     <div class="premium-header text-center">
-        <small class="text-uppercase" style="letter-spacing: 1.5px; opacity: 0.9; font-weight: 600;">Saldo em Conta</small>
+        <select id="mes" class="form-select month-selector-top mb-3" onchange="renderizar()"></select>
+
+        <small class="text-uppercase opacity-75" style="letter-spacing: 1.5px; font-weight: 600;">Saldo Disponível</small>
         <h1 class="display-4 fw-bold mb-3" id="resumoSaldo">R$ 0,00</h1>
+        
         <div class="d-flex justify-content-center gap-2">
-            <div class="header-labels small"><i class="bi bi-arrow-up-circle-fill" style="color: #b9ffdb;"></i> <span id="resumoEntradas" class="fw-bold">R$ 0,00</span></div>
-            <div class="header-labels small"><i class="bi bi-arrow-down-circle-fill" style="color: #ffd1d1;"></i> <span id="resumoSaidas" class="fw-bold">R$ 0,00</span></div>
+            <div class="header-labels small">
+                <i class="bi bi-arrow-up-circle-fill" style="color: #b9ffdb;"></i> 
+                <span id="resumoEntradas" class="fw-bold">R$ 0,00</span>
+            </div>
+            <div class="header-labels small">
+                <i class="bi bi-arrow-down-circle-fill" style="color: #ffd1d1;"></i> 
+                <span id="resumoSaidas" class="fw-bold">R$ 0,00</span>
+            </div>
         </div>
     </div>
 
@@ -67,7 +79,6 @@
         <div class="tab-content">
             <div class="tab-pane fade show active" id="aba-novo">
                 <div class="card card-premium p-4">
-                    <select id="mes" class="form-select border-0 bg-light mb-3" onchange="renderizar()"></select>
                     <div class="btn-group w-100 mb-3 shadow-sm" style="border-radius: 12px; overflow: hidden;">
                         <input type="radio" class="btn-check" name="tipo" id="tipoEntrada" value="Entrada" checked onchange="ajustarCampos()">
                         <label class="btn btn-outline-success border-0 py-2" for="tipoEntrada">Ganhei</label>
@@ -80,7 +91,9 @@
                     <button onclick="adicionarRegistro()" class="btn-confirmar shadow-sm">Confirmar ✨</button>
                 </div>
             </div>
+
             <div class="tab-pane fade" id="aba-extrato"><div id="listaExtrato"></div></div>
+
             <div class="tab-pane fade" id="aba-poupanca">
                 <div class="card card-premium p-4 text-center">
                     <div class="mb-2"><i class="bi bi-gem display-4" style="color: #e84393;"></i></div>
@@ -100,13 +113,9 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         // REFORÇO DE SERVICE WORKER PARA ATUALIZAÇÃO NO IPHONE
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js?v=2').then(function(reg) {
-                reg.update(); // Força busca de nova versão
-            });
-        }
+        if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js?v=3').then(function(reg) { reg.update(); }); }
 
-        let dados = JSON.parse(localStorage.getItem('fin_v_final_ios_v3')) || { transacoes: [], cofre: 0, histCofre: [] };
+        let dados = JSON.parse(localStorage.getItem('fin_v_ios_vfinal_premium_3')) || { transacoes: [], cofre: 0, histCofre: [] };
 
         const meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
         const selMes = document.getElementById('mes');
@@ -141,30 +150,40 @@
         function abrirModal(id, tipo) { idApagar = id; tipoApagar = tipo; document.getElementById('modalConfirm').style.display = 'flex'; }
         function fecharModal() { document.getElementById('modalConfirm').style.display = 'none'; }
         document.getElementById('btnConfirmarDelete').onclick = function() {
-            if(tipoApagar === 't') dados.transacoes = dados.transacoes.filter(x => x.id !== idApagar); else dados.histCofre = dados.histCofre.filter(x => x.id !== idApagar);
+            if(tipoApagar === 't') dados.transacoes = dados.transacoes.filter(x => x.id !== idApagar); 
+            else dados.histCofre = dados.histCofre.filter(x => x.id !== idApagar);
             salvar(); fecharModal(); showToast("Removido! 🗑️");
         };
 
-        function salvar() { localStorage.setItem('fin_v_final_ios_v3', JSON.stringify(dados)); renderizar(); }
+        function salvar() { localStorage.setItem('fin_v_ios_vfinal_premium_3', JSON.stringify(dados)); renderizar(); }
 
         function renderizar() {
-            const lista = document.getElementById('listaExtrato'); lista.innerHTML = "";
-            let entM = 0; let saiM = 0;
+            const listaExtrato = document.getElementById('listaExtrato'); listaExtrato.innerHTML = "";
+            const listHCofre = document.getElementById('listaHistCofre'); listHCofre.innerHTML = "";
+            let entM = 0; let saiM = 0; let saldoCofre = 0;
+
+            // Renderizar Transações Mensais
             dados.transacoes.filter(t => t.mes === selMes.value).forEach((t) => {
                 const isE = t.tipo === "Entrada"; if(isE) entM += t.valor; else saiM += t.valor;
-                lista.innerHTML += `<div class="card card-premium p-3 mb-2 border-start border-4 ${isE ? 'border-success' : 'border-danger'}"><div class="d-flex justify-content-between align-items-center"><div class="d-flex align-items-center gap-3"><i class="bi bi-trash btn-delete fs-5" onclick="abrirModal(${t.id}, 't')"></i><div><small class="text-muted d-block" style="font-size:0.7rem">${t.tipo}</small><strong>${t.desc}</strong></div></div><div class="${isE ? 'text-success' : 'text-danger'} fw-bold">${isE ? '+' : '-'} R$ ${t.valor.toFixed(2)}</div></div>${t.coment ? `<div class="comentario-box">🌸 ${t.coment}</div>` : ''}</div>`;
+                listaExtrato.innerHTML += `<div class="card card-premium p-3 mb-2 border-start border-4 ${isE ? 'border-success' : 'border-danger'}"><div class="d-flex justify-content-between align-items-center"><div class="d-flex align-items-center gap-3"><i class="bi bi-trash btn-delete fs-5" onclick="abrirModal(${t.id}, 't')"></i><div><small class="text-muted d-block" style="font-size:0.7rem">${t.tipo}</small><strong>${t.desc}</strong></div></div><div class="${isE ? 'text-success' : 'text-danger'} fw-bold">${isE ? '+' : '-'} R$ ${t.valor.toFixed(2)}</div></div>${t.coment ? `<div class="comentario-box">🌸 ${t.coment}</div>` : ''}</div>`;
             });
 
-            const listH = document.getElementById('listaHistCofre'); listH.innerHTML = "";
+            // CORREÇÃO: Renderizar e Recalcular Saldo do Cofre
             dados.histCofre.forEach(x => {
                 const isAdd = x.t === 'add';
-                listH.innerHTML += `<div class="card card-premium p-3 mb-2 border-start border-3 ${isAdd ? 'border-success' : 'border-danger'}"><div class="d-flex justify-content-between align-items-center"><span><i class="bi bi-trash3 me-2 opacity-50" onclick="abrirModal(${x.id}, 'h')"></i><small>${x.data}</small></span><span class="${isAdd ? 'text-success' : 'text-danger'} fw-bold">${isAdd ? '+' : '-'}- R$ ${x.v.toFixed(2)}</span></div>${x.coment ? `<div class="comentario-box">🌸 ${x.coment}</div>` : ''}</div>`;
+                if(isAdd) saldoCofre += x.v; else saldoCofre -= x.v; // Recalcula o saldo
+
+                listHCofre.innerHTML += `<div class="card card-premium p-3 mb-2 border-start border-3 ${isAdd ? 'border-success' : 'border-danger'}"><div class="d-flex justify-content-between align-items-center"><span><i class="bi bi-trash3 me-2 opacity-50" onclick="abrirModal(${x.id}, 'h')"></i><small>${x.data}</small></span><span class="${isAdd ? 'text-success' : 'text-danger'} fw-bold">${isAdd ? '+' : '-'}- R$ ${x.v.toFixed(2)}</span></div>${x.coment ? `<div class="comentario-box">🌸 ${x.coment}</div>` : ''}</div>`;
             });
 
+            // Atualizar os Resumos na Tela
             document.getElementById('resumoEntradas').innerText = "R$ " + entM.toFixed(2);
             document.getElementById('resumoSaidas').innerText = "R$ " + saiM.toFixed(2);
             document.getElementById('resumoSaldo').innerText = "R$ " + (entM - saiM).toFixed(2);
-            document.getElementById('totalCofre').innerText = "R$ " + dados.cofre.toFixed(2);
+            
+            // CORREÇÃO: Atualiza o Saldo do Cofre com o valor recalculado
+            document.getElementById('totalCofre').innerText = "R$ " + saldoCofre.toFixed(2); 
+            dados.cofre = saldoCofre; // Sincroniza o valor recalculado com a base de dados
         }
         renderizar();
     </script>
