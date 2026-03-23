@@ -112,99 +112,192 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // REFORÇO DE SERVICE WORKER PARA ATUALIZAÇÃO NO IPHONE
-        if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js?v=3').then(function(reg) { reg.update(); }); }
+// REFORÇO DE SERVICE WORKER PARA ATUALIZAÇÃO NO IPHONE
+if ('serviceWorker' in navigator) { 
+    navigator.serviceWorker.register('sw.js?v=4').then(function(reg) { reg.update(); }); 
+}
 
-        let dados = JSON.parse(localStorage.getItem('fin_v_ios_vfinal_premium_3')) || { transacoes: [], cofre: 0, histCofre: [] };
+// Chave de memória
+let dados = JSON.parse(localStorage.getItem('fin_v_ios_vfinal_premium_3')) || { transacoes: [], cofre: 0, histCofre: [] };
 
-        const meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
-        const selMes = document.getElementById('mes');
-        meses.forEach((m, i) => { const opt = document.createElement('option'); opt.value = m; opt.text = m; if(i === new Date().getMonth()) opt.selected = true; selMes.add(opt); });
-
-        function showToast(m) { const t = document.getElementById('toast'); t.innerText = m; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 2000); }
-        function ajustarCampos() { document.getElementById('contComent').style.display = (document.querySelector('input[name="tipo"]:checked').value === "Saída") ? "block" : "none"; }
-        function validarBotoesCofre() {
-            const v = document.getElementById('valorPoupanca').value;
-            if(v > 0) { document.getElementById('btnP').classList.add('active'); document.getElementById('btnR').classList.add('active'); }
-            else { document.getElementById('btnP').classList.remove('active'); document.getElementById('btnR').classList.remove('active'); }
-        }
-
-        function adicionarRegistro() {
-            const desc = document.getElementById('desc').value, val = parseFloat(document.getElementById('valor').value) || 0, tipo = document.querySelector('input[name="tipo"]:checked').value;
-            if (!desc || val <= 0) return showToast("Preencha os campos! 🌸");
-            dados.transacoes.push({ id: Date.now(), mes: selMes.value, desc, valor: val, tipo, coment: tipo === "Saída" ? document.getElementById('comentario').value : "" });
-            salvar(); document.getElementById('desc').value = ""; document.getElementById('valor').value = ""; document.getElementById('comentario').value = "";
-            showToast("Lançado! ✨");
-        }
-
-        function gerirPoupanca(t) {
-            const v = parseFloat(document.getElementById('valorPoupanca').value) || 0, c = document.getElementById('comentarioCofre').value;
-            if (v <= 0) return;
-            dados.cofre = (t === 'add') ? dados.cofre + v : dados.cofre - v;
-            dados.histCofre.unshift({ id: Date.now(), v, t, coment: c, data: new Date().toLocaleDateString() });
-            document.getElementById('valorPoupanca').value = ""; document.getElementById('comentarioCofre').value = "";
-            validarBotoesCofre(); salvar(); showToast("Cofre atualizado! 💎");
-        }
-
-        let idApagar = null, tipoApagar = '';
-        function abrirModal(id, tipo) { idApagar = id; tipoApagar = tipo; document.getElementById('modalConfirm').style.display = 'flex'; }
-        function fecharModal() { document.getElementById('modalConfirm').style.display = 'none'; }
-        document.getElementById('btnConfirmarDelete').onclick = function() {
-            if(tipoApagar === 't') dados.transacoes = dados.transacoes.filter(x => x.id !== idApagar); 
-            else dados.histCofre = dados.histCofre.filter(x => x.id !== idApagar);
-            salvar(); fecharModal(); showToast("Removido! 🗑️");
-        };
-
-        function salvar() { localStorage.setItem('fin_v_ios_vfinal_premium_3', JSON.stringify(dados)); renderizar(); }
-
-        function renderizar() {
-            const listaExtrato = document.getElementById('listaExtrato'); listaExtrato.innerHTML = "";
-            const listHCofre = document.getElementById('listaHistCofre'); listHCofre.innerHTML = "";
-            let entM = 0; let saiM = 0; let saldoCofre = 0;
-
-            // Renderizar Transações Mensais
-            dados.transacoes.filter(t => t.mes === selMes.value).forEach((t) => {
-                const isE = t.tipo === "Entrada"; if(isE) entM += t.valor; else saiM += t.valor;
-                listaExtrato.innerHTML += `<div class="card card-premium p-3 mb-2 border-start border-4 ${isE ? 'border-success' : 'border-danger'}"><div class="d-flex justify-content-between align-items-center"><div class="d-flex align-items-center gap-3"><i class="bi bi-trash btn-delete fs-5" onclick="abrirModal(${t.id}, 't')"></i><div><small class="text-muted d-block" style="font-size:0.7rem">${t.tipo}</small><strong>${t.desc}</strong></div></div><div class="${isE ? 'text-success' : 'text-danger'} fw-bold">${isE ? '+' : '-'} R$ ${t.valor.toFixed(2)}</div></div>${t.coment ? `<div class="comentario-box">🌸 ${t.coment}</div>` : ''}</div>`;
-            });
-
-            // CORREÇÃO: Renderizar e Recalcular Saldo do Cofre
-            dados.histCofre.forEach(x => {
-    const isA = x.tipo === 'add'; 
-    if(isA) salC += x.v; else salC -= x.v;
-    
-    // Verificamos se estamos na aba do cofre para renderizar a lista
-    if(document.getElementById('aba-p').classList.contains('active')) {
-        // CORREÇÃO AQUI: Removemos o +- e -- fixos
-        const sinal = isA ? '+' : '-';
-        const corClasse = isA ? 'text-success' : 'text-danger';
-
-        listC.innerHTML += `
-            <div class="card card-premium p-3 mb-2 border-start border-3 ${isA ? 'border-success' : 'border-danger'}" style="background-color: #fff;">
-                <div class="d-flex justify-content-between align-items-center">
-                    <span>
-                        <i class="bi bi-trash3 me-2 opacity-50" onclick="abrirModal(${x.id}, 'h')"></i>
-                        <small class="text-muted">${x.data}</small>
-                    </span>
-                    <span class="${corClasse} fw-bold">
-                        ${sinal} R$ ${x.v.toFixed(2)}
-                    </span>
-                </div>
-                ${x.coment ? `<div class="comentario-box">🌸 ${x.coment}</div>` : ''}
-            </div>`;
-    }
+const meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+const selMes = document.getElementById('mes');
+meses.forEach((m, i) => { 
+    const opt = document.createElement('option'); 
+    opt.value = m; 
+    opt.text = m; 
+    if(i === new Date().getMonth()) opt.selected = true; 
+    selMes.add(opt); 
 });
 
-            // Atualizar os Resumos na Tela
-            document.getElementById('resumoEntradas').innerText = "R$ " + entM.toFixed(2);
-            document.getElementById('resumoSaidas').innerText = "R$ " + saiM.toFixed(2);
-            document.getElementById('resumoSaldo').innerText = "R$ " + (entM - saiM).toFixed(2);
-            
-            // CORREÇÃO: Atualiza o Saldo do Cofre com o valor recalculado
-            document.getElementById('totalCofre').innerText = "R$ " + saldoCofre.toFixed(2); 
-            dados.cofre = saldoCofre; // Sincroniza o valor recalculado com a base de dados
+function showToast(m) { 
+    const t = document.getElementById('toast'); 
+    t.innerText = m; 
+    t.style.display = 'block'; 
+    setTimeout(() => t.style.display = 'none', 2000); 
+}
+
+function ajustarCampos() { 
+    document.getElementById('contComent').style.display = (document.querySelector('input[name="tipo"]:checked').value === "Saída") ? "block" : "none"; 
+}
+
+function validarBotoesCofre() {
+    const v = document.getElementById('valorPoupanca').value;
+    const btnP = document.getElementById('btnP');
+    const btnR = document.getElementById('btnR');
+    if(v > 0) { 
+        btnP.classList.add('active'); 
+        btnR.classList.add('active'); 
+    } else { 
+        btnP.classList.remove('active'); 
+        btnR.classList.remove('active'); 
+    }
+}
+
+function adicionarRegistro() {
+    const desc = document.getElementById('desc').value;
+    const val = parseFloat(document.getElementById('valor').value) || 0;
+    const tipo = document.querySelector('input[name="tipo"]:checked').value;
+    
+    if (!desc || val <= 0) return showToast("Preencha os campos! 🌸");
+    
+    dados.transacoes.push({ 
+        id: Date.now(), 
+        mes: selMes.value, 
+        desc: desc, 
+        valor: val, 
+        tipo: tipo, 
+        coment: tipo === "Saída" ? document.getElementById('comentario').value : "" 
+    });
+    
+    salvar(); 
+    document.getElementById('desc').value = ""; 
+    document.getElementById('valor').value = ""; 
+    document.getElementById('comentario').value = "";
+    showToast("Lançado! ✨");
+}
+
+function gerirPoupanca(t) {
+    const v = parseFloat(document.getElementById('valorPoupanca').value) || 0;
+    const c = document.getElementById('comentarioCofre').value;
+    
+    if (v <= 0) return;
+    
+    dados.histCofre.unshift({ 
+        id: Date.now(), 
+        v: v, 
+        t: t, 
+        coment: c, 
+        data: new Date().toLocaleDateString() 
+    });
+    
+    document.getElementById('valorPoupanca').value = ""; 
+    document.getElementById('comentarioCofre').value = "";
+    validarBotoesCofre(); 
+    salvar(); 
+    showToast("Cofre atualizado! 💎");
+}
+
+let idApagar = null, tipoApagar = '';
+function abrirModal(id, tipo) { 
+    idApagar = id; 
+    tipoApagar = tipo; 
+    document.getElementById('modalConfirm').style.display = 'flex'; 
+}
+
+function fecharModal() { 
+    document.getElementById('modalConfirm').style.display = 'none'; 
+}
+
+document.getElementById('btnConfirmarDelete').onclick = function() {
+    if(tipoApagar === 't') {
+        dados.transacoes = dados.transacoes.filter(x => x.id !== idApagar); 
+    } else {
+        dados.histCofre = dados.histCofre.filter(x => x.id !== idApagar);
+    }
+    salvar(); 
+    fecharModal(); 
+    showToast("Removido! 🗑️");
+};
+
+function salvar() { 
+    localStorage.setItem('fin_v_ios_vfinal_premium_3', JSON.stringify(dados)); 
+    renderizar(); 
+}
+
+function renderizar() {
+    const listaExtrato = document.getElementById('listaExtrato'); 
+    const listHCofre = document.getElementById('listaHistCofre');
+    
+    if(listaExtrato) listaExtrato.innerHTML = "";
+    if(listHCofre) listHCofre.innerHTML = "";
+
+    let entM = 0; 
+    let saiM = 0; 
+    let saldoTotalCofre = 0;
+
+    // 1. Extrato
+    dados.transacoes.filter(t => t.mes === selMes.value).forEach((t) => {
+        const valorTransacao = parseFloat(t.valor || t.v || 0);
+        const isE = t.tipo === "Entrada";
+        if(isE) entM += valorTransacao; else saiM += valorTransacao;
+        
+        if(listaExtrato) {
+            listaExtrato.innerHTML += `
+                <div class="card card-premium p-3 mb-2 border-start border-4 ${isE ? 'border-success' : 'border-danger'}">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center gap-3">
+                            <i class="bi bi-trash btn-delete fs-5" onclick="abrirModal(${t.id}, 't')"></i>
+                            <div>
+                                <small class="text-muted d-block" style="font-size:0.7rem">${t.tipo}</small>
+                                <strong>${t.desc || t.d}</strong>
+                            </div>
+                        </div>
+                        <div class="${isE ? 'text-success' : 'text-danger'} fw-bold">
+                            ${isE ? '+' : '-'} R$ ${valorTransacao.toFixed(2)}
+                        </div>
+                    </div>
+                    ${t.coment ? `<div class="comentario-box">🌸 ${t.coment}</div>` : ''}
+                </div>`;
         }
-        renderizar();
-    </script>
+    });
+
+    // 2. Cofre
+    dados.histCofre.forEach(x => {
+        const valorItem = parseFloat(x.v || x.valor || 0);
+        const isAdd = x.t === 'add';
+        if(isAdd) saldoTotalCofre += valorItem; else saldoTotalCofre -= valorItem;
+
+        if(listHCofre) {
+            const sinalVisual = isAdd ? '+' : '-';
+            const corSinal = isAdd ? 'text-success' : 'text-danger';
+
+            listHCofre.innerHTML += `
+                <div class="card card-premium p-3 mb-2 border-start border-3 ${isAdd ? 'border-success' : 'border-danger'}">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>
+                            <i class="bi bi-trash3 me-2 opacity-50" onclick="abrirModal(${x.id}, 'h')"></i>
+                            <small class="text-muted">${x.data}</small>
+                        </span>
+                        <span class="${corSinal} fw-bold">
+                            ${sinalVisual} R$ ${valorItem.toFixed(2)}
+                        </span>
+                    </div>
+                    ${x.coment ? `<div class="comentario-box">🌸 ${x.coment}</div>` : ''}
+                </div>`;
+        }
+    });
+
+    // 3. Resumos
+    if(document.getElementById('resumoEntradas')) document.getElementById('resumoEntradas').innerText = "R$ " + entM.toFixed(2);
+    if(document.getElementById('resumoSaidas')) document.getElementById('resumoSaidas').innerText = "R$ " + saiM.toFixed(2);
+    if(document.getElementById('resumoSaldo')) document.getElementById('resumoSaldo').innerText = "R$ " + (entM - saiM).toFixed(2);
+    if(document.getElementById('totalCofre')) document.getElementById('totalCofre').innerText = "R$ " + saldoTotalCofre.toFixed(2);
+    
+    dados.cofre = saldoTotalCofre;
+}
+
+renderizar();
+</script>
 </body>
 </html>
