@@ -170,11 +170,30 @@
 
             // CORREÇÃO: Renderizar e Recalcular Saldo do Cofre
             dados.histCofre.forEach(x => {
-                const isAdd = x.t === 'add';
-                if(isAdd) saldoCofre += x.v; else saldoCofre -= x.v; // Recalcula o saldo
+    const isA = x.tipo === 'add'; 
+    if(isA) salC += x.v; else salC -= x.v;
+    
+    // Verificamos se estamos na aba do cofre para renderizar a lista
+    if(document.getElementById('aba-p').classList.contains('active')) {
+        // CORREÇÃO AQUI: Removemos o +- e -- fixos
+        const sinal = isA ? '+' : '-';
+        const corClasse = isA ? 'text-success' : 'text-danger';
 
-                listHCofre.innerHTML += `<div class="card card-premium p-3 mb-2 border-start border-3 ${isAdd ? 'border-success' : 'border-danger'}"><div class="d-flex justify-content-between align-items-center"><span><i class="bi bi-trash3 me-2 opacity-50" onclick="abrirModal(${x.id}, 'h')"></i><small>${x.data}</small></span><span class="${isAdd ? 'text-success' : 'text-danger'} fw-bold">${isAdd ? '+' : '-'}- R$ ${x.v.toFixed(2)}</span></div>${x.coment ? `<div class="comentario-box">🌸 ${x.coment}</div>` : ''}</div>`;
-            });
+        listC.innerHTML += `
+            <div class="card card-premium p-3 mb-2 border-start border-3 ${isA ? 'border-success' : 'border-danger'}" style="background-color: #fff;">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span>
+                        <i class="bi bi-trash3 me-2 opacity-50" onclick="abrirModal(${x.id}, 'h')"></i>
+                        <small class="text-muted">${x.data}</small>
+                    </span>
+                    <span class="${corClasse} fw-bold">
+                        ${sinal} R$ ${x.v.toFixed(2)}
+                    </span>
+                </div>
+                ${x.coment ? `<div class="comentario-box">🌸 ${x.coment}</div>` : ''}
+            </div>`;
+    }
+});
 
             // Atualizar os Resumos na Tela
             document.getElementById('resumoEntradas').innerText = "R$ " + entM.toFixed(2);
